@@ -3,7 +3,6 @@ const path = require('path');
 const { app } = require('electron');
 
 // 1. Decide where to save the database file
-// We save it in the User Data folder so it persists even if you move the app
 const dbPath = path.join(app.getPath('userData'), 'pos.db');
 
 // 2. Open the connection
@@ -27,6 +26,22 @@ function initTables() {
             category TEXT
         )`);
 
+        // --- MIGRATION: ensure 'enabled' column exists ---
+        db.all("PRAGMA table_info(menu_items);", [], (err, cols) => {
+            if (err) {
+                console.error("Failed reading menu_items schema:", err);
+                return;
+            }
+            const names = cols.map(c => c.name);
+            if (!names.includes('enabled')) {
+                // Add enabled column with default 1 (true)
+                db.run("ALTER TABLE menu_items ADD COLUMN enabled INTEGER DEFAULT 1", (err) => {
+                    if (err) console.error("Failed adding enabled column:", err);
+                    else console.log("Added enabled column to menu_items.");
+                });
+            }
+        });
+
         // Table 2: Orders (The Bill Head)
         db.run(`CREATE TABLE IF NOT EXISTS orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -49,5 +64,4 @@ function initTables() {
     });
 }
 
-// 4. Export the db connection so other files can use it
 module.exports = db;

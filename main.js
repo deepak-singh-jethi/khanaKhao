@@ -14,11 +14,10 @@ function createWindow() {
         }
     });
 
-    // 2. Load the index.html file (UPDATED LINE)
-    // This forces the computer to find the absolute path to the file
+    // 2. Load the index.html file
     win.loadFile(path.join(__dirname, 'src', 'index.html'));
 
-    // 3. Open Developer Tools (TEMPORARY: Helps us see errors)
+    // 3. Open Developer Tools
     win.webContents.openDevTools();
 }
 
@@ -53,36 +52,39 @@ ipcMain.handle('get-menu-items', async () => {
 // 2. Add a new menu item
 ipcMain.handle('add-menu-item', async (event, item) => {
     return new Promise((resolve, reject) => {
-        const sql = "INSERT INTO menu_items (name, price, category) VALUES (?, ?, ?)";
+        const sql = "INSERT INTO menu_items (name, price, category, enabled) VALUES (?, ?, ?, 1)";
         db.run(sql, [item.name, item.price, item.category], function(err) {
             if (err) reject(err);
             else resolve({ id: this.lastID, ...item });
         });
     });
 });
-// 3. Save a new Order
+
+// 3. Update a menu item (edit or enable/disable)
+ipcMain.handle('update-menu-item', async (event, item) => {
+  return new Promise((resolve, reject) => {
+    // Expect item = { id, name, price, category, enabled }
+    const sql = "UPDATE menu_items SET name = ?, price = ?, category = ?, enabled = ? WHERE id = ?";
+    db.run(sql, [item.name, item.price, item.category, item.enabled ? 1 : 0, item.id], function(err) {
+      if (err) reject(err);
+      else resolve({ success: true, changes: this.changes });
+    });
+  });
+});
+
+// 4. Save a new Order
 ipcMain.handle('save-order', async (event, orderData) => {
     return new Promise((resolve, reject) => {
-        // orderData comes from the screen: { total: 200.00, items: [...] }
-        
-        db.serialize(() => { // This ensures we run these one by one
-            
-            // A. Create the Order Entry (The Bill Header)
+        db.serialize(() => {
             db.run("INSERT INTO orders (total_amount, payment_mode) VALUES (?, ?)", 
-                [orderData.total, 'CASH'], // We default to CASH for now
+                [orderData.total, 'CASH'], 
                 function(err) {
                     if (err) return reject(err);
-
-                    const orderId = this.lastID; // We need this ID to link the items!
-
-                    // B. Save the details (The List of Items)
+                    const orderId = this.lastID;
                     const stmt = db.prepare("INSERT INTO order_items (order_id, item_name, price, quantity) VALUES (?, ?, ?, ?)");
-                    
                     orderData.items.forEach(item => {
-                        // 1 means quantity is 1 for now
                         stmt.run(orderId, item.name, item.price, 1); 
                     });
-
                     stmt.finalize();
                     resolve({ success: true, orderId: orderId });
                 }
@@ -90,10 +92,10 @@ ipcMain.handle('save-order', async (event, orderData) => {
         });
     });
 });
-// 4. Get Sales Report
+
+// 5. Get Sales Report
 ipcMain.handle('get-sales-report', async () => {
     return new Promise((resolve, reject) => {
-        // Get all orders, newest first
         db.all("SELECT * FROM orders ORDER BY created_at DESC", [], (err, rows) => {
             if (err) reject(err);
             else resolve(rows);
