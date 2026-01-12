@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Restaurant POS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="menu-section">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+    <h2>Menu Items</h2>
+    <button onclick="showReports()" style="background:#4b5563; color:white; padding:8px 15px; border:none; border-radius:5px; cursor:pointer;">
+        📊 View Reports
+    </button>
+</div>
+        <div style="background: #e5e7eb; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+    <h3 style="margin-bottom: 10px;">Manager: Add Item</h3>
+    <input type="text" id="new-item-name" placeholder="Item Name (e.g. Dosa)" style="padding: 8px; width: 40%;">
+    <input type="number" id="new-item-price" placeholder="Price" style="padding: 8px; width: 25%;">
+    <button onclick="addNewItem()" style="padding: 8px 15px; background: #059669; color: white; border: none; cursor: pointer;">
+        + Add
+    </button>
+</div>
+        <div id="menu-grid" class="menu-grid">
+            </div>
+    </div>
+
+    <div id="bill-section">
+        <div class="bill-header">
+            <h2>Current Bill</h2>
+            <p>Bill #: <span id="bill-no">101</span></p>
+        </div>
+
+        <div id="bill-items">
+            <p style="text-align:center; color:#888; margin-top:20px;">
+                No items added
+            </p>
+        </div>
+
+        <div class="bill-footer">
+            <div class="total-row">
+                <span>Total:</span>
+                <span>₹ <span id="total-amount">0.00</span></span>
+            </div>
+            <button id="print-btn">PRINT BILL & SAVE</button>
+        </div>
+    </div>
+    <div id="report-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:100;">
+    <div style="background:white; width:80%; height:80%; margin:5% auto; padding:20px; border-radius:10px; display:flex; flex-direction:column;">
+        
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px; border-bottom:2px solid #eee; padding-bottom:10px;">
+            <h2>Sales Report</h2>
+            <button onclick="closeReports()" style="background:red; color:white; border:none; padding:5px 15px; cursor:pointer; font-size:1.2rem;">X</button>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:20px;">
+            <div style="background:#ecfdf5; padding:20px; border-radius:8px; text-align:center;">
+                <h3>Total Sales Today</h3>
+                <h1 style="color:#059669; font-size:2.5rem; margin-top:10px;">₹ <span id="report-total">0.00</span></h1>
+            </div>
+            <div style="background:#eff6ff; padding:20px; border-radius:8px; text-align:center;">
+                <h3>Total Orders</h3>
+                <h1 style="color:#2563eb; font-size:2.5rem; margin-top:10px;"><span id="report-count">0</span></h1>
+            </div>
+        </div>
+
+        <div style="flex-grow:1; overflow-y:auto;">
+            <table style="width:100%; border-collapse:collapse;">
+                <thead style="background:#f3f4f6;">
+                    <tr>
+                        <th style="padding:10px; text-align:left; border-bottom:2px solid #ddd;">Bill ID</th>
+                        <th style="padding:10px; text-align:left; border-bottom:2px solid #ddd;">Date</th>
+                        <th style="padding:10px; text-align:right; border-bottom:2px solid #ddd;">Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="report-table-body">
+                    </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+<div id="receipt-preview">
+    <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
+        <h2 style="margin: 0;">MY RESTAURANT</h2>
+        <p style="margin: 5px 0; font-size: 0.8rem;">Delicious Food & Drinks</p>
+        <p style="margin: 0; font-size: 0.8rem;">Tel: +91 98765 43210</p>
+    </div>
+
+    <div style="margin-bottom: 10px;">
+        <p style="margin: 0;">Bill No: <span id="receipt-bill-no">000</span></p>
+        <p style="margin: 0;">Date: <span id="receipt-date">--/--/----</span></p>
+    </div>
+
+    <table style="width: 100%; font-size: 0.9rem; border-collapse: collapse; margin-bottom: 10px;">
+        <thead>
+            <tr style="border-bottom: 1px solid #000;">
+                <th style="text-align: left;">Item</th>
+                <th style="text-align: right;">Qty</th>
+                <th style="text-align: right;">Price</th>
+            </tr>
+        </thead>
+        <tbody id="receipt-items">
+            </tbody>
+    </table>
+
+    <div style="text-align: right; border-top: 1px dashed #000; padding-top: 10px;">
+        <h3 style="margin: 0;">TOTAL: ₹ <span id="receipt-total">0.00</span></h3>
+    </div>
+
+    <div style="text-align: center; margin-top: 20px; font-size: 0.8rem;">
+        <p>*** Thank You! Visit Again ***</p>
+    </div>
+</div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>

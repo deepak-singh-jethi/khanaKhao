@@ -1,0 +1,153 @@
+/* GLOBAL RESET - Makes sure everything looks same on all PCs */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', sans-serif; /* Standard Windows Font */
+}
+
+body {
+    display: flex;
+    height: 100vh; /* Full screen height */
+    background-color: #f3f4f6;
+    overflow: hidden; /* No scrolling on main page */
+}
+
+/* LEFT SIDE - MENU AREA */
+#menu-section {
+    width: 65%;
+    padding: 20px;
+    overflow-y: auto; /* Allow scrolling if menu is long */
+    border-right: 2px solid #ddd;
+}
+
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* Auto-resize buttons */
+    gap: 15px;
+}
+
+.menu-item {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.menu-item:active {
+    background-color: #e0e7ff; /* Blue flash when clicked */
+    transform: scale(0.98);
+}
+
+.item-name {
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.item-price {
+    color: #059669; /* Green color for money */
+    font-weight: bold;
+}
+
+/* RIGHT SIDE - BILLING AREA */
+#bill-section {
+    width: 35%;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* Bill Header */
+.bill-header {
+    padding: 20px;
+    background: #1f2937;
+    color: white;
+    text-align: center;
+}
+
+/* Bill List (The items added) */
+#bill-items {
+    flex-grow: 1; /* Takes up all available space */
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.bill-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    border-bottom: 1px dashed #eee;
+}
+
+/* Bill Footer (Total & Print Button) */
+.bill-footer {
+    padding: 20px;
+    border-top: 2px solid #ddd;
+    background: #f9fafb;
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+#print-btn {
+    width: 100%;
+    padding: 15px;
+    background-color: #2563eb; /* Blue button */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#print-btn:hover {
+    background-color: #1d4ed8;
+}
+
+/* --- RECEIPT PRINTING STYLES --- */
+
+/* 1. HIDE the receipt on the normal screen */
+#receipt-preview {
+    display: none;
+}
+
+/* 2. When the Printer starts... */
+@media print {
+    /* Hide the normal app UI */
+    body * {
+        visibility: hidden;
+    }
+    
+    /* Show ONLY the receipt */
+    #receipt-preview, #receipt-preview * {
+        visibility: visible;
+    }
+
+    /* Position the receipt at the top-left of the paper */
+    #receipt-preview {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%; /* Matches paper width */
+        font-family: 'Courier New', monospace; /* Classic receipt font */
+        color: black;
+    }
+
+    /* Remove background colors to save ink */
+    body {
+        background: white;
+    }
+}
