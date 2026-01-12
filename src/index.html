@@ -1,122 +1,108 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Restaurant POS</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <header style="display:flex; gap:10px; align-items:center; padding:12px; background:#111827; color:#fff; width:100%; position:fixed; top:0; left:0; height:60px; z-index:10;">
-        <div style="font-weight:700; font-size:1.1rem;">KhanaKhao POS</div>
-        <nav style="margin-left:20px;">
-            <button id="nav-manager" onclick="showManager()" style="padding:8px 12px; margin-right:8px;">Manager</button>
-            <button id="nav-billing" onclick="showBilling()" style="padding:8px 12px;">Billing</button>
-        </nav>
-    </header>
-
-    <div style="margin-top:60px; width:100%; display:flex; height:calc(100vh - 60px);">
-
-        <div id="manager-screen" style="width:100%; padding:20px; overflow-y:auto;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h2>Manager Dashboard</h2>
-                <button onclick="showReports()" style="background:#4b5563; color:white; padding:8px 15px; border:none; border-radius:5px; cursor:pointer;">
-                    📊 View Reports
-                </button>
-            </div>
-
-            <div style="background: #e5e7eb; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                <h3 style="margin-bottom: 10px;">Manage Item</h3>
-                <input type="text" id="new-item-name" placeholder="Item Name (e.g. Dosa)" style="padding: 8px; width: 35%;">
-                <input type="number" id="new-item-price" placeholder="Price" style="padding: 8px; width: 20%;">
-                <input type="text" id="new-item-category" placeholder="Category" style="padding: 8px; width: 20%;">
-                <button id="add-item-btn" onclick="submitAddOrUpdate()" style="padding: 8px 15px; background: #059669; color: white; border: none; cursor: pointer;">
-                    Add Item
-                </button>
-                <button onclick="cancelEdit()" style="padding: 8px 10px; background: #6b7280; color: white; border: none; cursor: pointer; margin-left:5px;">
-                    Clear
-                </button>
-            </div>
-
-            <div id="menu-grid" class="menu-grid">
-                </div>
+    <aside class="sidebar">
+        <div class="brand">
+            <span class="brand-icon">🍔</span> KhanaKhao
         </div>
+        <button onclick="showBilling()" class="nav-item active" id="nav-billing">
+            <span>🧾</span> Billing
+        </button>
+        <button onclick="showManager()" class="nav-item" id="nav-manager">
+            <span>📦</span> Manager
+        </button>
+    </aside>
 
-        <div id="billing-screen" style="display:none; padding:20px; width:100%;">
-            <h2>Billing screen — Phase 2 coming soon</h2>
-            <p>For now the bill area is a placeholder to confirm navigation and layout.</p>
+    <main class="main-content">
+        
+        <section id="billing-screen" class="screen active">
+            <header class="screen-header"><h2>Billing Terminal</h2></header>
+            <div class="empty-state">
+                <p>Billing System Active</p>
+            </div>
+        </section>
+
+        <section id="manager-screen" class="screen">
             
-            <div id="bill-section" style="display:none;">
-                <div class="bill-header">
-                    <h2>Current Bill</h2>
-                    <p>Bill #: <span id="bill-no">101</span></p>
+            <div class="manager-header-row">
+                <h2>Manager Dashboard</h2>
+                <div class="tabs-toggle">
+                    <button id="btn-tab-menu" class="tab-btn active" onclick="switchManagerTab('menu')">
+                        Menu Management
+                    </button>
+                    <button id="btn-tab-reports" class="tab-btn" onclick="switchManagerTab('reports')">
+                        Billing Reports
+                    </button>
                 </div>
-                <div id="bill-items"></div>
-                <div class="bill-footer">
-                    <div class="total-row">
-                        <span>Total:</span>
-                        <span>₹ <span id="total-amount">0.00</span></span>
+            </div>
+
+            <div id="manager-tab-menu" class="tab-content active">
+                <div class="manager-layout">
+                    <div class="form-container">
+                        <div class="form-card">
+                            <div class="form-header">
+                                <h3>Add / Edit Item</h3>
+                                <button onclick="cancelEdit()" class="btn-reset">Reset</button>
+                            </div>
+                            <div class="form-body">
+                                <div class="input-group">
+                                    <label>Item Name <span class="req">*</span></label>
+                                    <input type="text" id="new-item-name" placeholder="e.g. Butter Chicken">
+                                </div>
+                                <div class="input-row">
+                                    <div class="input-group">
+                                        <label>Category</label>
+                                        <input type="text" id="new-item-category" placeholder="Main Course">
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Type</label>
+                                        <div class="toggle-container">
+                                            <label class="toggle-option">
+                                                <input type="radio" name="item-type" value="veg" checked><span>🟢 Veg</span>
+                                            </label>
+                                            <label class="toggle-option">
+                                                <input type="radio" name="item-type" value="non-veg"><span>🔴 Non</span>
+                                            </label>
+                                            <label class="toggle-option">
+                                                <input type="radio" name="item-type" value="egg"><span>🟡 Egg</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <label>Base Price (₹) <span class="req">*</span></label>
+                                    <input type="number" id="new-item-price" placeholder="0.00">
+                                </div>
+                                
+                                <button id="add-item-btn" onclick="submitAddOrUpdate()" class="btn-primary">Save Item</button>
+                            </div>
+                        </div>
                     </div>
-                    <button id="print-btn">PRINT BILL & SAVE</button>
+
+                    <div class="menu-grid-container">
+                        <div id="menu-grid" class="menu-grid"></div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-    </div>
-
-    <div id="report-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:100;">
-        <div style="background:white; width:80%; height:80%; margin:5% auto; padding:20px; border-radius:10px; display:flex; flex-direction:column;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:20px; border-bottom:2px solid #eee; padding-bottom:10px;">
-                <h2>Sales Report</h2>
-                <button onclick="closeReports()" style="background:red; color:white; border:none; padding:5px 15px; cursor:pointer; font-size:1.2rem;">X</button>
-            </div>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:20px;">
-                <div style="background:#ecfdf5; padding:20px; border-radius:8px; text-align:center;">
-                    <h3>Total Sales Today</h3>
-                    <h1 style="color:#059669; font-size:2.5rem; margin-top:10px;">₹ <span id="report-total">0.00</span></h1>
-                </div>
-                <div style="background:#eff6ff; padding:20px; border-radius:8px; text-align:center;">
-                    <h3>Total Orders</h3>
-                    <h1 style="color:#2563eb; font-size:2.5rem; margin-top:10px;"><span id="report-count">0</span></h1>
+            <div id="manager-tab-reports" class="tab-content">
+                <div class="empty-state">
+                    <h3>📊 Billing Reports</h3>
+                    <p>Sales charts and history will appear here.</p>
                 </div>
             </div>
-            <div style="flex-grow:1; overflow-y:auto;">
-                <table style="width:100%; border-collapse:collapse;">
-                    <thead style="background:#f3f4f6;">
-                        <tr>
-                            <th style="padding:10px; text-align:left; border-bottom:2px solid #ddd;">Bill ID</th>
-                            <th style="padding:10px; text-align:left; border-bottom:2px solid #ddd;">Date</th>
-                            <th style="padding:10px; text-align:right; border-bottom:2px solid #ddd;">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody id="report-table-body"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
 
-    <div id="receipt-preview">
-        <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
-            <h2 style="margin: 0;">MY RESTAURANT</h2>
-            <p style="margin: 5px 0; font-size: 0.8rem;">Delicious Food & Drinks</p>
-        </div>
-        <div style="margin-bottom: 10px;">
-            <p style="margin: 0;">Bill No: <span id="receipt-bill-no">000</span></p>
-            <p style="margin: 0;">Date: <span id="receipt-date">--/--/----</span></p>
-        </div>
-        <table style="width: 100%; font-size: 0.9rem; border-collapse: collapse; margin-bottom: 10px;">
-            <thead>
-                <tr style="border-bottom: 1px solid #000;">
-                    <th style="text-align: left;">Item</th>
-                    <th style="text-align: right;">Qty</th>
-                    <th style="text-align: right;">Price</th>
-                </tr>
-            </thead>
-            <tbody id="receipt-items"></tbody>
-        </table>
-        <div style="text-align: right; border-top: 1px dashed #000; padding-top: 10px;">
-            <h3 style="margin: 0;">TOTAL: ₹ <span id="receipt-total">0.00</span></h3>
-        </div>
-    </div>
+        </section>
+
+    </main>
 
     <script src="renderer.js"></script>
 </body>

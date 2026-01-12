@@ -1,201 +1,167 @@
-let cart = [];
-let total = 0;
+// --- GLOBAL STATE ---
+let editingItemId = null;
+let allMenuItems = []; 
 
-// 1. When App Starts: Load Menu from Database
+// --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', async () => {
-    loadMenuFromDB();
+    navigateTo('manager-screen'); 
+    switchManagerTab('menu');
+    await loadMenuFromDB();
 });
 
-// 2. Fetch Menu from Real Database
-async function loadMenuFromDB() {
-    const menuContainer = document.getElementById('menu-grid');
-    menuContainer.innerHTML = 'Loading...'; // Show loading text
+// --- NAVIGATION ---
+function navigateTo(screenId) {
+    document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+    const navId = 'nav-' + screenId.replace('-screen', '');
+    const btn = document.getElementById(navId);
+    if(btn) btn.classList.add('active');
 
-    // ASK THE DATABASE FOR ITEMS
-    const products = await window.api.getMenuItems();
-
-    menuContainer.innerHTML = ''; // Clear loading text
-
-    if (products.length === 0) {
-        menuContainer.innerHTML = '<p>No items found. Add some above!</p>';
-        return;
-    }
-
-    // Create buttons for each real item
-    products.forEach((item) => {
-        const div = document.createElement('div');
-        div.className = 'menu-item';
-        div.innerHTML = `
-            <div class="item-name">${item.name}</div>
-            <div class="item-price">₹ ${item.price.toFixed(2)}</div>
-        `;
-        div.onclick = () => addToCart(item);
-        menuContainer.appendChild(div);
-    });
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
 }
 
-// 3. Manager: Add New Item to Database
-async function addNewItem() {
-    const nameInput = document.getElementById('new-item-name');
-    const priceInput = document.getElementById('new-item-price');
+window.showManager = () => navigateTo('manager-screen');
+window.showBilling = () => navigateTo('billing-screen');
 
-    const name = nameInput.value;
-    const price = parseFloat(priceInput.value);
+window.switchManagerTab = (tabName) => {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    const activeBtn = document.getElementById(`btn-tab-${tabName}`);
+    if(activeBtn) activeBtn.classList.add('active');
 
-    if (!name || !price) {
-        alert("Please enter both Name and Price");
-        return;
-    }
-
-    // SEND TO DATABASE
-    await window.api.addMenuItem({
-        name: name,
-        price: price,
-        category: "General"
-    });
-
-    // Clear inputs and reload the menu
-    nameInput.value = '';
-    priceInput.value = '';
-    loadMenuFromDB(); // Refresh the screen!
-}
-
-// 4. Billing Logic (Same as before)
-function addToCart(item) {
-    cart.push(item);
-    updateBillUI();
-}
-
-function updateBillUI() {
-    const billItemsDiv = document.getElementById('bill-items');
-    const totalSpan = document.getElementById('total-amount');
-
-    billItemsDiv.innerHTML = '';
-    total = 0;
-
-    cart.forEach((item, index) => {
-        total += item.price;
-        const row = document.createElement('div');
-        row.className = 'bill-row';
-        row.innerHTML = `
-            <span>${item.name}</span>
-            <span>₹ ${item.price.toFixed(2)}</span>
-            <span style="color:red; cursor:pointer; margin-left:10px;" 
-                  onclick="removeFromCart(${index})">✖</span>
-        `;
-        billItemsDiv.appendChild(row);
-    });
-
-    totalSpan.innerText = total.toFixed(2);
-}
-
-window.removeFromCart = (index) => {
-    cart.splice(index, 1);
-    updateBillUI();
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    const activeContent = document.getElementById(`manager-tab-${tabName}`);
+    if(activeContent) activeContent.classList.add('active');
 };
-// 5. PRINT & SAVE BUTTON LOGIC (FINAL)
-const printBtn = document.getElementById('print-btn');
 
-printBtn.addEventListener('click', async () => {
-    
-    if (cart.length === 0) {
-        alert("Cart is empty!");
+// --- FORM HANDLING ---
+window.submitAddOrUpdate = async () => {
+    const name = document.getElementById('new-item-name').value.trim();
+    const price = parseFloat(document.getElementById('new-item-price').value);
+    const category = document.getElementById('new-item-category').value.trim();
+    const typeVal = document.querySelector('input[name="item-type"]:checked').value;
+
+    if (!name || isNaN(price) || price < 0) {
+        alert("Name and Base Price are required.");
         return;
     }
 
-    // A. LOCK BUTTON
-    printBtn.disabled = true;
-    printBtn.innerText = "Printing...";
-    printBtn.style.background = "#9ca3af";
-
-    const orderData = {
-        total: total,
-        items: cart
-    };
+    const btn = document.getElementById('add-item-btn');
+    btn.disabled = true; btn.innerText = "Saving...";
 
     try {
-        // 1. Save to Database
-        const result = await window.api.saveOrder(orderData);
-        
-        if (result.success) {
-            
-            // 2. FILL RECEIPT DATA (The visual ticket)
-            document.getElementById('receipt-bill-no').innerText = result.orderId;
-            document.getElementById('receipt-date').innerText = new Date().toLocaleString();
-            document.getElementById('receipt-total').innerText = total.toFixed(2);
-            
-            const receiptBody = document.getElementById('receipt-items');
-            receiptBody.innerHTML = '';
-            
-            cart.forEach(item => {
-                receiptBody.innerHTML += `
-                    <tr>
-                        <td>${item.name}</td>
-                        <td style="text-align:right">1</td>
-                        <td style="text-align:right">${item.price.toFixed(2)}</td>
-                    </tr>
-                `;
-            });
+        const itemData = {
+            name, price, category, type: typeVal
+        };
 
-            // 3. TRIGGER PRINTER
-            // This opens the system print dialog. 
-            // The CSS we added ensures ONLY the receipt is shown.
-            window.print();
-
-            // 4. AFTER PRINTING IS DONE (Or Cancelled)
-            cart = [];
-            updateBillUI();
-            document.getElementById('bill-no').innerText = result.orderId + 1;
+        if (editingItemId) {
+            await window.api.updateMenuItem({ id: editingItemId, ...itemData, enabled: 1 });
+        } else {
+            await window.api.addMenuItem(itemData);
         }
-    } catch (error) {
-        console.error("Failed to save:", error);
-        alert("Error saving order");
-    } finally {
-        // B. UNLOCK BUTTON
-        printBtn.disabled = false;
-        printBtn.innerText = "PRINT BILL & SAVE";
-        printBtn.style.background = "#2563eb";
-    }
-});
-
-// --- REPORT FUNCTIONS ---
-
-// 1. Show the Report Screen
-window.showReports = async () => {
-    const modal = document.getElementById('report-modal');
-    modal.style.display = 'block';
-    
-    // Load Data
-    const salesData = await window.api.getSalesReport();
-    renderReport(salesData);
-};
-
-// 2. Hide the Report Screen
-window.closeReports = () => {
-    document.getElementById('report-modal').style.display = 'none';
-};
-
-// 3. Render the Data
-function renderReport(data) {
-    const tableBody = document.getElementById('report-table-body');
-    const totalSpan = document.getElementById('report-total');
-    const countSpan = document.getElementById('report-count');
-
-    tableBody.innerHTML = '';
-    let grandTotal = 0;
-
-    data.forEach(order => {
-        grandTotal += order.total_amount;
         
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td style="padding:10px; border-bottom:1px solid #eee;">#${order.id}</td>
-            <td style="padding:10px; border-bottom:1px solid #eee;">${new Date(order.created_at).toLocaleString()}</td>
-            <td style="padding:10px; border-bottom:1px solid #eee; text-align:right; font-weight:bold;">₹ ${order.total_amount.toFixed(2)}</td>
-        `;
-        tableBody.appendChild(row);
-    });
+        window.cancelEdit(); 
+        await loadMenuFromDB();
+        
+    } catch (err) {
+        alert("Error saving: " + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Save Item";
+    }
+};
 
-    totalSpan.innerText = grandTotal.toFixed(2);
-    countSpan.innerText = data.length;
+window.startEdit = (id) => {
+    const item = allMenuItems.find(p => p.id === id);
+    if (!item) return;
+
+    editingItemId = item.id;
+    document.getElementById('new-item-name').value = item.name;
+    document.getElementById('new-item-price').value = item.price;
+    document.getElementById('new-item-category').value = item.category || '';
+    
+    const typeRadio = document.querySelector(`input[name="item-type"][value="${item.type}"]`);
+    if(typeRadio) typeRadio.checked = true;
+
+    document.getElementById('add-item-btn').innerText = 'Update Item';
+    document.getElementById('new-item-name').focus();
+    
+    document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth' });
+};
+
+window.cancelEdit = () => {
+    editingItemId = null;
+    document.getElementById('new-item-name').value = '';
+    document.getElementById('new-item-price').value = '';
+    document.getElementById('new-item-category').value = '';
+    document.querySelector('input[name="item-type"][value="veg"]').checked = true;
+    
+    document.getElementById('add-item-btn').innerText = 'Save Item';
+};
+
+// --- GRID ---
+async function loadMenuFromDB() {
+    const grid = document.getElementById('menu-grid');
+    if (!grid) return;
+
+    try {
+        allMenuItems = await window.api.getMenuItems();
+        
+        grid.innerHTML = '';
+        if (allMenuItems.length === 0) {
+            grid.innerHTML = '<div class="empty-state">Menu is empty. Add items!</div>';
+            return;
+        }
+
+        allMenuItems.forEach(item => renderItemCard(item, grid));
+    } catch (e) {
+        console.error(e);
+        grid.innerHTML = '<div class="empty-state" style="color:red">Failed to load data.</div>';
+    }
 }
+
+function renderItemCard(item, container) {
+    const isEnabled = item.enabled !== 0;
+    let typeIcon = item.type === 'non-veg' ? '🔴' : (item.type === 'egg' ? '🟡' : '🟢');
+    
+    const priceHtml = `<div class="price-line base">Price: ₹${item.price.toFixed(2)}</div>`;
+    
+    const card = document.createElement('div');
+    card.className = `menu-item-card ${isEnabled ? '' : 'disabled'}`;
+    card.innerHTML = `
+        <div class="card-content">
+            <div class="item-header">
+                <div class="item-title">${item.name}</div>
+                <div title="${item.type}">${typeIcon}</div>
+            </div>
+            <div class="item-cat">${item.category || 'General'}</div>
+            <div class="item-pricing">${priceHtml}</div>
+        </div>
+        <div class="card-actions">
+            <button class="action-btn" onclick="toggleItemEnable(${item.id}, ${!isEnabled})">
+                <span>${isEnabled ? 'Disable' : 'Enable'}</span>
+            </button>
+            <button class="action-btn" onclick="startEdit(${item.id})">
+                 <span>✏️ Edit</span>
+            </button>
+            <button class="action-btn delete" onclick="deleteItem(${item.id})">
+                 <span>🗑️ Delete</span>
+            </button>
+        </div>
+    `;
+    container.appendChild(card);
+}
+
+window.deleteItem = async (id) => {
+    if (confirm("Delete this item permanently?")) {
+        await window.api.deleteMenuItem(id);
+        await loadMenuFromDB();
+    }
+};
+
+window.toggleItemEnable = async (id, newStatus) => {
+    const item = allMenuItems.find(p => p.id === id);
+    if(item) {
+        await window.api.updateMenuItem({ ...item, enabled: newStatus ? 1 : 0 });
+        await loadMenuFromDB();
+    }
+};
